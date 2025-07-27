@@ -1,0 +1,262 @@
+-- College Admission Management System Database Schema
+-- MySQL Database Script
+
+-- Create database
+CREATE DATABASE IF NOT EXISTS college_admission;
+USE college_admission;
+
+-- Drop tables if they exist (for clean setup)
+DROP TABLE IF EXISTS applications;
+DROP TABLE IF EXISTS courses;
+DROP TABLE IF EXISTS students;
+
+-- Create students table
+CREATE TABLE students (
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15),
+    date_of_birth DATE,
+    address TEXT,
+    grade12_percentage DOUBLE(5,2),
+    category ENUM('GENERAL', 'OBC', 'SC', 'ST') DEFAULT 'GENERAL',
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create courses table
+CREATE TABLE courses (
+    course_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_name VARCHAR(100) NOT NULL,
+    course_code VARCHAR(20) UNIQUE NOT NULL,
+    description TEXT,
+    duration INT DEFAULT 4, -- Duration in years
+    total_seats INT NOT NULL,
+    available_seats INT NOT NULL,
+    general_cutoff DOUBLE(5,2) DEFAULT 0.00,
+    obc_cutoff DOUBLE(5,2) DEFAULT 0.00,
+    sc_cutoff DOUBLE(5,2) DEFAULT 0.00,
+    st_cutoff DOUBLE(5,2) DEFAULT 0.00,
+    fees DOUBLE(10,2) DEFAULT 0.00,
+    department VARCHAR(100),
+    status ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create applications table
+CREATE TABLE applications (
+    application_id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('PENDING', 'APPROVED', 'REJECTED', 'WAITLISTED', 'WITHDRAWN') DEFAULT 'PENDING',
+    remarks TEXT,
+    merit_score DOUBLE(5,2) DEFAULT 0.00,
+    preference INT DEFAULT 1, -- Student's preference order for this course
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Foreign key constraints
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE,
+    
+    -- Ensure unique application per student per course
+    UNIQUE KEY unique_student_course (student_id, course_id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_students_email ON students(email);
+CREATE INDEX idx_students_category ON students(category);
+CREATE INDEX idx_students_grade12 ON students(grade12_percentage);
+CREATE INDEX idx_students_status ON students(status);
+
+CREATE INDEX idx_courses_code ON courses(course_code);
+CREATE INDEX idx_courses_department ON courses(department);
+CREATE INDEX idx_courses_status ON courses(status);
+
+CREATE INDEX idx_applications_student ON applications(student_id);
+CREATE INDEX idx_applications_course ON applications(course_id);
+CREATE INDEX idx_applications_status ON applications(status);
+CREATE INDEX idx_applications_date ON applications(application_date);
+CREATE INDEX idx_applications_merit ON applications(merit_score);
+CREATE INDEX idx_applications_preference ON applications(preference);
+
+-- Insert sample data for testing
+
+-- Sample students
+INSERT INTO students (first_name, last_name, email, phone, date_of_birth, address, grade12_percentage, category, status) VALUES
+('Rahul', 'Sharma', 'rahul.sharma@email.com', '9876543210', '2003-05-15', '123 Main St, Delhi', 85.50, 'GENERAL', 'ACTIVE'),
+('Priya', 'Patel', 'priya.patel@email.com', '9876543211', '2003-08-20', '456 Oak Ave, Mumbai', 90.25, 'OBC', 'ACTIVE'),
+('Amit', 'Singh', 'amit.singh@email.com', '9876543212', '2003-03-10', '789 Pine Rd, Bangalore', 78.75, 'SC', 'ACTIVE'),
+('Sneha', 'Reddy', 'sneha.reddy@email.com', '9876543213', '2003-11-05', '321 Elm St, Hyderabad', 92.00, 'GENERAL', 'ACTIVE'),
+('Rajesh', 'Kumar', 'rajesh.kumar@email.com', '9876543214', '2003-07-25', '654 Maple Dr, Chennai', 81.30, 'ST', 'ACTIVE');
+
+-- Sample courses
+INSERT INTO courses (course_name, course_code, description, duration, total_seats, available_seats, general_cutoff, obc_cutoff, sc_cutoff, st_cutoff, fees, department, status) VALUES
+('Bachelor of Technology - Computer Science', 'BTCS001', 'Computer Science and Engineering program', 4, 120, 85, 85.00, 80.00, 75.00, 70.00, 150000.00, 'Computer Science', 'ACTIVE'),
+('Bachelor of Technology - Electronics', 'BTEC002', 'Electronics and Communication Engineering', 4, 100, 70, 82.00, 77.00, 72.00, 67.00, 140000.00, 'Electronics', 'ACTIVE'),
+('Bachelor of Technology - Mechanical', 'BTME003', 'Mechanical Engineering program', 4, 80, 55, 80.00, 75.00, 70.00, 65.00, 135000.00, 'Mechanical', 'ACTIVE'),
+('Bachelor of Science - Mathematics', 'BSMA004', 'Mathematics and Statistics program', 3, 60, 40, 75.00, 70.00, 65.00, 60.00, 80000.00, 'Mathematics', 'ACTIVE'),
+('Bachelor of Arts - English', 'BAEN005', 'English Literature and Language', 3, 50, 35, 70.00, 65.00, 60.00, 55.00, 60000.00, 'English', 'ACTIVE');
+
+-- Sample applications
+INSERT INTO applications (student_id, course_id, application_date, status, remarks, merit_score, preference) VALUES
+(1, 1, '2024-01-15 10:30:00', 'APPROVED', 'Excellent academic record', 85.50, 1),
+(1, 2, '2024-01-15 10:35:00', 'PENDING', 'Under review', 85.50, 2),
+(2, 1, '2024-01-16 09:15:00', 'APPROVED', 'Outstanding performance', 90.25, 1),
+(2, 4, '2024-01-16 09:20:00', 'WAITLISTED', 'Good candidate, seats full', 90.25, 2),
+(3, 3, '2024-01-17 14:20:00', 'APPROVED', 'Meets SC category requirements', 78.75, 1),
+(4, 1, '2024-01-18 11:45:00', 'PENDING', 'Application under review', 92.00, 1),
+(4, 2, '2024-01-18 11:50:00', 'APPROVED', 'Excellent candidate', 92.00, 2),
+(5, 3, '2024-01-19 16:10:00', 'APPROVED', 'Meets ST category requirements', 81.30, 1);
+
+-- Create views for commonly used queries
+
+-- View for applications with student and course details
+CREATE VIEW applications_detailed AS
+SELECT 
+    a.application_id,
+    a.student_id,
+    a.course_id,
+    CONCAT(s.first_name, ' ', s.last_name) as student_name,
+    s.email as student_email,
+    s.grade12_percentage,
+    s.category as student_category,
+    c.course_name,
+    c.course_code,
+    c.department,
+    a.application_date,
+    a.status,
+    a.remarks,
+    a.merit_score,
+    a.preference,
+    a.last_updated
+FROM applications a
+JOIN students s ON a.student_id = s.student_id
+JOIN courses c ON a.course_id = c.course_id;
+
+-- View for course statistics
+CREATE VIEW course_statistics AS
+SELECT 
+    c.course_id,
+    c.course_name,
+    c.course_code,
+    c.department,
+    c.total_seats,
+    c.available_seats,
+    (c.total_seats - c.available_seats) as occupied_seats,
+    COUNT(a.application_id) as total_applications,
+    COUNT(CASE WHEN a.status = 'APPROVED' THEN 1 END) as approved_applications,
+    COUNT(CASE WHEN a.status = 'PENDING' THEN 1 END) as pending_applications,
+    COUNT(CASE WHEN a.status = 'REJECTED' THEN 1 END) as rejected_applications,
+    COUNT(CASE WHEN a.status = 'WAITLISTED' THEN 1 END) as waitlisted_applications
+FROM courses c
+LEFT JOIN applications a ON c.course_id = a.course_id
+GROUP BY c.course_id;
+
+-- Triggers for maintaining data integrity
+
+-- Trigger to update available seats when application is approved
+DELIMITER //
+CREATE TRIGGER update_available_seats_after_approval
+AFTER UPDATE ON applications
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'APPROVED' AND OLD.status != 'APPROVED' THEN
+        UPDATE courses 
+        SET available_seats = available_seats - 1 
+        WHERE course_id = NEW.course_id AND available_seats > 0;
+    ELSEIF OLD.status = 'APPROVED' AND NEW.status != 'APPROVED' THEN
+        UPDATE courses 
+        SET available_seats = available_seats + 1 
+        WHERE course_id = NEW.course_id;
+    END IF;
+END//
+DELIMITER ;
+
+-- Stored procedures for common operations
+
+-- Procedure to get applications by student
+DELIMITER //
+CREATE PROCEDURE GetApplicationsByStudent(IN student_id INT)
+BEGIN
+    SELECT * FROM applications_detailed 
+    WHERE student_id = student_id 
+    ORDER BY preference;
+END//
+DELIMITER ;
+
+-- Procedure to get applications by course
+DELIMITER //
+CREATE PROCEDURE GetApplicationsByCourse(IN course_id INT)
+BEGIN
+    SELECT * FROM applications_detailed 
+    WHERE course_id = course_id 
+    ORDER BY merit_score DESC;
+END//
+DELIMITER ;
+
+-- Procedure to check admission eligibility
+DELIMITER //
+CREATE PROCEDURE CheckAdmissionEligibility(
+    IN p_student_id INT, 
+    IN p_course_id INT,
+    OUT is_eligible BOOLEAN,
+    OUT message VARCHAR(255)
+)
+BEGIN
+    DECLARE student_percentage DOUBLE;
+    DECLARE student_category VARCHAR(10);
+    DECLARE required_cutoff DOUBLE;
+    DECLARE available_seats INT;
+    
+    -- Get student details
+    SELECT grade12_percentage, category 
+    INTO student_percentage, student_category
+    FROM students 
+    WHERE student_id = p_student_id;
+    
+    -- Get course details and required cutoff
+    SELECT 
+        available_seats,
+        CASE 
+            WHEN student_category = 'GENERAL' THEN general_cutoff
+            WHEN student_category = 'OBC' THEN obc_cutoff
+            WHEN student_category = 'SC' THEN sc_cutoff
+            WHEN student_category = 'ST' THEN st_cutoff
+            ELSE general_cutoff
+        END
+    INTO available_seats, required_cutoff
+    FROM courses 
+    WHERE course_id = p_course_id;
+    
+    -- Check eligibility
+    IF student_percentage >= required_cutoff AND available_seats > 0 THEN
+        SET is_eligible = TRUE;
+        SET message = 'Student is eligible for admission';
+    ELSEIF student_percentage < required_cutoff THEN
+        SET is_eligible = FALSE;
+        SET message = 'Student does not meet minimum cutoff requirements';
+    ELSE
+        SET is_eligible = FALSE;
+        SET message = 'No seats available';
+    END IF;
+END//
+DELIMITER ;
+
+-- Display table information
+SHOW TABLES;
+
+-- Display sample data
+SELECT 'Students Data:' as '';
+SELECT * FROM students LIMIT 5;
+
+SELECT 'Courses Data:' as '';
+SELECT * FROM courses LIMIT 5;
+
+SELECT 'Applications Data:' as '';
+SELECT * FROM applications_detailed LIMIT 10;
