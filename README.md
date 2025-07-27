@@ -1,4 +1,4 @@
-#College Admission Management System
+# College Admission Management System #
 This project is a comprehensive, console-based College Admission Management System built using Java and MySQL. It provides a complete solution for managing students, courses, applications, and the end-to-end admission process. The system is designed with a layered architecture (Model-DAO-Service) to ensure separation of concerns and maintainability.
 
 Features
